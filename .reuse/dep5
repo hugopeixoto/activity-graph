@@ -1,0 +1,10 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: activity-graph
+Upstream-Contact: Hugo Peixoto <hugo.peixoto@gmail.com>
+Source: https://hugopeixoto.net/
+
+# Sample paragraph, commented out:
+#
+# Files: src/*
+# Copyright: $YEAR $NAME <$CONTACT>
+# License: ...
