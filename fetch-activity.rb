@@ -9,8 +9,6 @@ require 'date'
 
 config = JSON.parse(File.read("config.json"))
 
-username = ARGV.fetch(0)
-
 def github_activity(username, token)
   query = "query {
     user(login: \"#{username}\") {
@@ -18,6 +16,7 @@ def github_activity(username, token)
         contributionCalendar {
           weeks {
             contributionDays {
+              date
               contributionCount
             }
           }
@@ -36,25 +35,41 @@ def github_activity(username, token)
     .to_h
 end
 
-def ansol_activity(username, token)
-  URI("https://git.ansol.org/api/v1/users/#{username}/heatmap")
-    .then { Net::HTTP.get(_1, { "Authorization" => "bearer #{token}" }) }
-    .then { JSON.parse(_1) }
-    .map { |x| [Time.at(x["timestamp"]).to_date.to_s, x["contributions"]] }
-    .group_by { |x| x[0] }
-    .transform_values { |v| v.map(&:last).sum }
-end
-
 def gitlab_activity(username)
   URI("https://gitlab.com/users/#{username}/calendar.json")
     .then { Net::HTTP.get(_1) }
     .then { JSON.parse(_1) }
 end
 
-{
-  github: github_activity(username, config.dig("tokens", "github")),
-  ansol: ansol_activity(username, config.dig("tokens", "ansol")),
-  gitlab: gitlab_activity(username),
-}
+def gitea_activity(username, url, token)
+  headers =
+    if token
+      { "Authorization" => "bearer #{token}" }
+    else
+      {}
+    end
+
+  URI("https://#{url}/api/v1/users/#{username}/heatmap")
+    .then { Net::HTTP.get(_1, headers) }
+    .then { JSON.parse(_1) }
+    .map { |x| [Time.at(x["timestamp"]).to_date.to_s, x["contributions"]] }
+    .group_by { |x| x[0] }
+    .transform_values { |v| v.map(&:last).sum }
+end
+
+def activity(forge)
+  case forge["url"]
+  when "github.com"
+    github_activity(forge["username"], forge["token"])
+  when "gitlab.com"
+    gitlab_activity(forge["username"])
+  else
+    gitea_activity(forge["username"], forge["url"], forge["token"])
+  end
+
+end
+
+config["forges"]
+  .map { |forge| { url: forge["url"], activity: activity(forge) } }
   .then { JSON.dump(_1) }
   .then { File.write("activity.json", _1) }

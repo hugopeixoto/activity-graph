@@ -10,7 +10,7 @@ activity = File
   .read("activity.json")
   .then { JSON.parse(_1) }
 
-finish = Date.parse(activity.values.flat_map(&:keys).max)
+finish = Date.parse(activity.map { |f| f["activity"] }.flat_map(&:keys).max)
 start = finish.prev_year
 while not start.sunday?
   start = start.prev_day
@@ -76,21 +76,13 @@ def graph(label, range, &fn)
 end
 
 output << graph("activity", start..finish) do |day|
-  activity["ansol"].fetch(day.to_s, 0) +
-  activity["gitlab"].fetch(day.to_s, 0) +
-  activity["github"].fetch(day.to_s, 0)
+  activity.map { |f| f["activity"].fetch(day.to_s, 0) }.sum
 end
 
-output << graph("git.ansol.org", start..finish) do |day|
-  activity["ansol"].fetch(day.to_s, 0)
-end
-
-output << graph("gitlab.com", start..finish) do |day|
-  activity["gitlab"].fetch(day.to_s, 0)
-end
-
-output << graph("github.com", start..finish) do |day|
-  activity["github"].fetch(day.to_s, 0)
+activity.each do |forge|
+  output << graph(forge["url"], start..finish) do |day|
+    forge["activity"].fetch(day.to_s, 0)
+  end
 end
 
 output.puts <<EOF
