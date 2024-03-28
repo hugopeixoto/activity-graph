@@ -5,6 +5,6 @@ Source: https://hugopeixoto.net/
 
 # Sample paragraph, commented out:
 #
-# Files: src/*
-# Copyright: $YEAR $NAME <$CONTACT>
-# License: ...
+Files: README.md screenshot.png
+Copyright: 2024 Hugo Peixoto <hugo.peixoto@gmail.com>
+License: AGPL-3.0-only
